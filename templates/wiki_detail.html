@@ -1,35 +1,71 @@
 {% extends 'base.html' %}
 {% block content %}
-<a href="/wiki" class="btn btn-outline-secondary mb-3">&larr; Zurück</a>
-<div class="card border-info">
-    <div class="card-header bg-info text-dark d-flex justify-content-between align-items-center">
-        <h2 class="mb-0">{{ oil.name }}</h2>
-        <a href="{{ url_for('admin_oil_edit', id=oil.id) }}" class="btn btn-dark btn-sm">Bearbeiten</a>
+<a href="javascript:history.back()" class="btn btn-outline-secondary mb-3">&larr; Zurück</a>
+
+<div class="row">
+    <div class="{{ 'col-lg-8' if data else 'col-12' }}">
+        <h1 class="display-4 text-info">{{ entry.name }}</h1>
+        {% if entry.inci %}<p class="lead text-muted">INCI: {{ entry.inci }}</p>{% endif %}
+        <span class="badge bg-secondary mb-3">{{ entry.category }}</span>
+        <hr>
+        <div class="content lead">
+            {{ entry.content | safe }}
+        </div>
     </div>
-    <div class="card-body">
-        <div class="row">
-            <div class="col-md-6">
-                <h5 class="text-white">Beschreibung</h5>
-                <p class="lead">{{ oil.description }}</p>
-                <small class="text-muted">INCI: {{ oil.inci }}</small>
-                <hr>
-                <h6 class="text-muted">Chemische Daten</h6>
-                <ul class="list-group list-group-flush bg-transparent">
-                    <li class="list-group-item bg-transparent text-white">SAP (NaOH): <strong>{{ oil.sap_naoh }}</strong></li>
-                    <li class="list-group-item bg-transparent text-white">Jodzahl: <strong>{{ oil.iodine }}</strong></li>
-                    <li class="list-group-item bg-transparent text-white">INS: <strong>{{ oil.ins }}</strong></li>
-                </ul>
+
+    {% if data %}
+    <div class="col-lg-4 mt-4 mt-lg-0">
+        
+        {% if data.sap_naoh %}
+        <div class="card border-info mb-3">
+            <div class="card-header bg-info text-dark fw-bold">Verseifungswerte</div>
+            <ul class="list-group list-group-flush">
+                <li class="list-group-item d-flex justify-content-between"><span>NaOH:</span><b>{{ data.sap_naoh }}</b></li>
+                {% if data.sap_koh %}<li class="list-group-item d-flex justify-content-between"><span>KOH:</span><b>{{ data.sap_koh }}</b></li>{% endif %}
+                {% if data.iodine %}<li class="list-group-item d-flex justify-content-between"><span>Jodzahl:</span><b>{{ data.iodine }}</b></li>{% endif %}
+            </ul>
+        </div>
+        {% endif %}
+
+        {% if data.neutralization_factor %}
+        <div class="card border-warning mb-3">
+            <div class="card-header bg-warning text-dark fw-bold">Neutralisation</div>
+            <div class="card-body">
+                <p>Um 1g hiervon zu neutralisieren, benötigst du:</p>
+                <h3>{{ data.neutralization_factor }}g NaOH</h3>
             </div>
-            <div class="col-md-6 border-start border-secondary">
-                <h5 class="text-white mb-3">Eigenschaften</h5>
-                {% for prop, val in [('Härte', oil.hardness), ('Reinigung', oil.cleansing), ('Pflege', oil.conditioning), ('Schaum', oil.bubbly), ('Cremigkeit', oil.creamy)] %}
-                <label>{{ prop }} ({{ val }}/100)</label>
-                <div class="progress mb-3" style="height: 20px;">
-                    <div class="progress-bar" style="width: {{ val }}%"></div>
-                </div>
+        </div>
+        {% endif %}
+
+        {% if data.usage_rate %}
+        <div class="card border-success mb-3">
+            <div class="card-header bg-success text-white fw-bold">Einsatzkonzentration</div>
+            <div class="card-body">
+                {{ data.usage_rate }}
+            </div>
+        </div>
+        {% endif %}
+
+        {% if data.fatty_acids %}
+        <div class="card border-secondary">
+            <div class="card-header">Fettsäureprofil</div>
+            <div class="card-body small">
+                {% for acid, val in data.fatty_acids.items() %}
+                    {% if val > 0 %}
+                    <div class="d-flex justify-content-between mb-1">
+                        <span class="text-capitalize">{{ acid }}</span>
+                        <span>{{ val }}%</span>
+                    </div>
+                    <div class="progress" style="height: 5px;">
+                        <div class="progress-bar bg-secondary" style="width: {{ val }}%"></div>
+                    </div>
+                    {% endif %}
                 {% endfor %}
             </div>
         </div>
+        {% endif %}
+
     </div>
+    {% endif %}
 </div>
 {% endblock %}

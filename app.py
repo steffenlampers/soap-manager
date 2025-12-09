@@ -1,187 +1,172 @@
 import os
 import json
-from flask import Flask, render_template, request, redirect, url_for, flash, jsonify
+from flask import Flask, render_template, request, redirect, url_for, flash
 from extensions import db
-from models import Soap, Ingredient, OilProfile
+from models import Soap, Ingredient, WikiEntry
 
 app = Flask(__name__)
 app.secret_key = 'super_secret_key_soap_manager'
 
-# --- CONFIG ---
 basedir = os.path.abspath(os.path.dirname(__file__))
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(basedir, 'soap.db')
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db.init_app(app)
 
-# --- ROUTES: PUBLIC ---
+# --- HELPER: WISSENSCHAFTLICHE BERECHNUNG ---
+def calculate_science(entries, amounts):
+    """Berechnet Fettsäureprofil basierend auf den JSON-Daten der Einträge"""
+    total_amount = sum(amounts.values())
+    if total_amount == 0: return None
+
+    total_fatty = {'lauric':0,'myristic':0,'palmitic':0,'stearic':0,'ricinoleic':0,'oleic':0,'linoleic':0,'linolenic':0}
+    total_iodine = 0
+
+    for entry in entries:
+        data = entry.get_data()
+        pct = amounts[entry.id] / total_amount
+        
+        # Sicherstellen, dass Jodzahl existiert
+        iodine = data.get('iodine', 0)
+        total_iodine += iodine * pct
+        
+        # Fettsäuren holen
+        acids = data.get('fatty_acids', {})
+        for k, v in acids.items():
+            if k in total_fatty: total_fatty[k] += v * pct
+
+    return {
+        'iodine': round(total_iodine, 1),
+        'hardness': round(sum([total_fatty[x] for x in ['lauric','myristic','palmitic','stearic']]), 1),
+        'cleansing': round(sum([total_fatty[x] for x in ['lauric','myristic']]), 1),
+        'conditioning': round(sum([total_fatty[x] for x in ['oleic','linoleic','linolenic','ricinoleic']]), 1),
+        'bubbly': round(sum([total_fatty[x] for x in ['lauric','myristic','ricinoleic']]), 1),
+        'creamy': round(sum([total_fatty[x] for x in ['palmitic','stearic','ricinoleic']]), 1),
+        'fatty_acids': {k: round(v,1) for k,v in total_fatty.items() if v > 0}
+    }
+
+# --- ROUTES ---
 
 @app.route('/')
 def home():
-    stats = {'soaps': 0, 'inventory': 0, 'knowledge': 0}
+    stats = {}
     try:
+        stats['wiki'] = WikiEntry.query.count()
         stats['soaps'] = Soap.query.count()
-        stats['inventory'] = Ingredient.query.count()
-        stats['knowledge'] = OilProfile.query.count()
-    except:
-        pass
+    except: pass
     return render_template('index.html', stats=stats)
 
+# --- WIKI ---
 @app.route('/wiki')
 def wiki():
-    oils = OilProfile.query.order_by(OilProfile.name).all()
-    return render_template('wiki.html', oils=oils)
+    # Alle Kategorien sammeln
+    cats = [c[0] for c in db.session.query(WikiEntry.category).distinct().all() if c[0]]
+    cats.sort()
+    return render_template('wiki_index.html', categories=cats)
 
-@app.route('/wiki/<int:id>')
+@app.route('/wiki/category/<path:cat>')
+def wiki_category(cat):
+    entries = WikiEntry.query.filter_by(category=cat).order_by(WikiEntry.name).all()
+    return render_template('wiki_list.html', category=cat, entries=entries)
+
+@app.route('/wiki/entry/<int:id>')
 def wiki_detail(id):
-    oil = OilProfile.query.get_or_404(id)
-    return render_template('wiki_detail.html', oil=oil)
+    entry = WikiEntry.query.get_or_404(id)
+    # Wir übergeben die Daten separat, damit das Template leicht darauf zugreifen kann
+    return render_template('wiki_detail.html', entry=entry, data=entry.get_data())
 
-# --- ROUTES: ADMIN ---
+# --- RECHNER (Filtert automatisch nach Ölen) ---
+@app.route('/calculator', methods=['GET', 'POST'])
+def calculator():
+    # TRICK: Wir holen ALLE Einträge, filtern aber im Python Code nur die, die "sap_naoh" im JSON haben
+    all_entries = WikiEntry.query.order_by(WikiEntry.category, WikiEntry.name).all()
+    
+    # Filter: Nur Einträge, die SAP Werte haben (also Öle sind)
+    oil_options = [e for e in all_entries if 'sap_naoh' in e.get_data()]
+    
+    result = None
+    if request.method == 'POST':
+        try:
+            entry_id = int(request.form.get('oil_id'))
+            amount = float(request.form.get('amount'))
+            superfat = float(request.form.get('superfat'))
+            
+            sel = WikiEntry.query.get(entry_id)
+            data = sel.get_data()
+            
+            # NaOH berechnen
+            sap = data.get('sap_naoh', 0.134) # Fallback falls Fehler
+            naoh = (amount * sap) * (1 - (superfat/100))
+            
+            science = calculate_science([sel], {sel.id: amount})
+            
+            result = {
+                'oil': sel.name, 'amount': amount, 'naoh': round(naoh, 2),
+                'water': round(amount*0.33, 2), 'superfat': superfat,
+                'science': science
+            }
+        except Exception as e: flash(f"Fehler: {e}")
+            
+    return render_template('calculator.html', oils=oil_options, result=result)
 
+# --- ADMIN & IMPORT ---
 @app.route('/admin')
-def admin():
-    oil_count = OilProfile.query.count()
-    soap_count = Soap.query.count()
-    return render_template('admin.html', oil_count=oil_count, soap_count=soap_count)
+def admin(): return render_template('admin.html')
 
 @app.route('/admin/import', methods=['POST'])
 def admin_import():
     file = request.files.get('file')
     if file:
         try:
-            data = json.load(file)
-            count_new = 0
-            count_updated = 0
-            
-            for item in data:
-                # --- DUPLIKAT-CHECK ---
-                # Wir suchen nach dem Namen in der Datenbank
-                oil = OilProfile.query.filter_by(name=item['name']).first()
-                
-                if not oil:
-                    # Nicht gefunden -> Wir erstellen einen neuen Eintrag
-                    oil = OilProfile(name=item['name'])
-                    db.session.add(oil)
-                    count_new += 1
+            items = json.load(file)
+            c_new = 0
+            c_upd = 0
+            for item in items:
+                entry = WikiEntry.query.filter_by(name=item.get('name') or item.get('title')).first()
+                if not entry:
+                    entry = WikiEntry(name=item.get('name') or item.get('title'))
+                    db.session.add(entry)
+                    c_new += 1
                 else:
-                    # Gefunden -> Wir aktualisieren den bestehenden Eintrag
-                    count_updated += 1
+                    c_upd += 1
                 
-                # Hier schreiben wir die Daten (passiert bei NEU und UPDATE)
-                oil.inci = item.get('inci', '')
-                oil.description = item.get('description', '')
-                oil.sap_naoh = float(item.get('sap_naoh', 0))
-                oil.iodine = int(item.get('iodine', 0))
-                oil.ins = int(item.get('ins', 0))
-                oil.hardness = int(item.get('hardness', 0))
-                oil.cleansing = int(item.get('cleansing', 0))
-                oil.conditioning = int(item.get('conditioning', 0))
-                oil.bubbly = int(item.get('bubbly', 0))
-                oil.creamy = int(item.get('creamy', 0))
+                # Standard Daten
+                entry.category = item.get('category', 'Allgemein')
+                entry.inci = item.get('inci', '')
+                entry.content = item.get('content') or item.get('description', '')
+                
+                # Der Clou: Alles was NICHT Standard ist, kommt in data_json
+                # Wir bauen ein sauberes Dictionary für die Technik-Daten
+                tech_data = {}
+                
+                # Liste der bekannten Technik-Felder
+                tech_keys = ['sap_naoh', 'sap_koh', 'iodine', 'ins', 'fatty_acids', 
+                             'hardness', 'cleansing', 'conditioning', 'bubbly', 'creamy',
+                             'neutralization_factor', 'usage_rate', 'ph_value']
+                
+                for key in tech_keys:
+                    if key in item:
+                        tech_data[key] = item[key]
+                
+                entry.data_json = json.dumps(tech_data)
             
             db.session.commit()
-            flash(f'Import erfolgreich! {count_new} neu angelegt, {count_updated} aktualisiert.', 'success')
-        except Exception as e:
-            flash(f'Fehler beim Import: {e}', 'danger')
+            flash(f'Import: {c_new} neu, {c_upd} aktualisiert.', 'success')
+        except Exception as e: flash(f'Fehler: {e}', 'danger')
     return redirect(url_for('admin'))
-
-@app.route('/admin/export')
-def admin_export():
-    oils = OilProfile.query.all()
-    data = []
-    for oil in oils:
-        data.append({
-            'name': oil.name, 'inci': oil.inci, 'description': oil.description,
-            'sap_naoh': oil.sap_naoh, 'iodine': oil.iodine, 'ins': oil.ins,
-            'hardness': oil.hardness, 'cleansing': oil.cleansing,
-            'conditioning': oil.conditioning, 'bubbly': oil.bubbly, 'creamy': oil.creamy
-        })
-    return jsonify(data)
 
 @app.route('/admin/reset_db')
 def admin_reset_db():
-    # Löscht nur die Öle, nicht die Rezepte!
-    db.session.query(OilProfile).delete()
+    db.session.query(WikiEntry).delete()
     db.session.commit()
-    seed_database()
-    flash('Wissensdatenbank wurde geleert und zurückgesetzt!', 'warning')
     return redirect(url_for('admin'))
-
-# --- EDITOREN (Manuell) ---
-@app.route('/admin/oil/new', methods=['GET', 'POST'])
-def admin_oil_new():
-    if request.method == 'POST': return save_oil_profile(None, request.form)
-    return render_template('wiki_form.html', oil=None)
-
-@app.route('/admin/oil/edit/<int:id>', methods=['GET', 'POST'])
-def admin_oil_edit(id):
-    oil = OilProfile.query.get_or_404(id)
-    if request.method == 'POST': return save_oil_profile(oil, request.form)
-    return render_template('wiki_form.html', oil=oil)
-
-def save_oil_profile(oil, form):
-    try:
-        if not oil:
-            oil = OilProfile()
-            db.session.add(oil)
-        oil.name = form.get('name')
-        oil.inci = form.get('inci')
-        oil.description = form.get('description')
-        oil.sap_naoh = float(form.get('sap_naoh'))
-        oil.iodine = int(form.get('iodine'))
-        oil.ins = int(form.get('ins'))
-        oil.hardness = int(form.get('hardness'))
-        oil.cleansing = int(form.get('cleansing'))
-        oil.conditioning = int(form.get('conditioning'))
-        oil.bubbly = int(form.get('bubbly'))
-        oil.creamy = int(form.get('creamy'))
-        db.session.commit()
-        flash('Gespeichert.', 'success')
-        return redirect(url_for('wiki'))
-    except Exception as e:
-        flash(f'Fehler: {e}', 'danger')
-        return redirect(url_for('admin'))
-
-# --- RECHNER & APPS ---
-@app.route('/calculator', methods=['GET', 'POST'])
-def calculator():
-    available_oils = OilProfile.query.order_by(OilProfile.name).all()
-    result = None
-    if request.method == 'POST':
-        try:
-            oil_id = int(request.form.get('oil_id'))
-            amount = float(request.form.get('amount'))
-            superfat = float(request.form.get('superfat'))
-            sel = OilProfile.query.get(oil_id)
-            
-            # Berechnungslogik
-            naoh_pure = amount * sel.sap_naoh
-            discount = naoh_pure * (superfat/100)
-            final_naoh = naoh_pure - discount
-            
-            result = {
-                'oil': sel.name, 'amount': amount, 'naoh': round(final_naoh, 2),
-                'water': round(amount*0.33, 2), 'superfat': superfat,
-                'properties': {'Härte': sel.hardness, 'Pflege': sel.conditioning, 'Reinigung': sel.cleansing}
-            }
-        except: flash("Fehler bei der Berechnung")
-    return render_template('calculator.html', oils=available_oils, result=result)
 
 @app.route('/recipes')
 def recipes(): return render_template('recipes.html', soaps=Soap.query.all())
 @app.route('/inventory')
 def inventory(): return render_template('inventory.html', items=Ingredient.query.all())
 
-def seed_database():
-    # Legt nur an, wenn wirklich gar nichts da ist
-    if OilProfile.query.first() is None:
-        db.session.add(OilProfile(name="Olivenöl", inci="Olea Europaea", sap_naoh=0.134, hardness=17, conditioning=83, description="Basis-Startwert."))
-        db.session.commit()
-
-with app.app_context():
-    db.create_all()
-    seed_database()
+with app.app_context(): db.create_all()
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)

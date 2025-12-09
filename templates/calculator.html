@@ -1,33 +1,72 @@
 {% extends 'base.html' %}
 {% block content %}
 <h2 class="mb-4">Seifenrechner</h2>
+
 <div class="row">
-    <div class="col-md-6">
+    <div class="col-md-5">
         <div class="card p-4 border-success">
             <form method="POST">
                 <div class="mb-3">
-                    <label class="form-label">Basis-Öl (aus Datenbank)</label>
+                    <label class="form-label">Basis-Fett wählen</label>
                     <select name="oil_id" class="form-select bg-dark text-white">
                         {% for oil in oils %}
                         <option value="{{ oil.id }}">{{ oil.name }}</option>
                         {% endfor %}
                     </select>
                 </div>
-                <div class="mb-3"><label class="form-label">Menge (g)</label><input type="number" step="0.1" name="amount" class="form-control bg-dark text-white" placeholder="500" required></div>
-                <div class="mb-3"><label class="form-label">Überfettung (%)</label><input type="number" name="superfat" class="form-control bg-dark text-white" value="8" required></div>
+                <div class="mb-3">
+                    <label>Menge (g)</label>
+                    <input type="number" step="0.1" name="amount" class="form-control bg-dark text-white" placeholder="500" required>
+                </div>
+                <div class="mb-3">
+                    <label>Überfettung (%)</label>
+                    <input type="number" name="superfat" class="form-control bg-dark text-white" value="8" required>
+                </div>
                 <button type="submit" class="btn btn-success w-100">Berechnen</button>
             </form>
         </div>
     </div>
-    <div class="col-md-6">
+
+    <div class="col-md-7">
         {% if result %}
-        <div class="card p-4 border-primary mt-3 mt-md-0">
-            <h4 class="text-primary">Ergebnis: {{ result.oil }}</h4>
-            <hr>
-            <ul class="list-group list-group-flush">
-                <li class="list-group-item bg-transparent text-white d-flex justify-content-between"><span>NaOH:</span><span class="fw-bold text-warning">{{ result.naoh }}g</span></li>
-                <li class="list-group-item bg-transparent text-white d-flex justify-content-between"><span>Wasser:</span><span class="fw-bold text-info">{{ result.water }}g</span></li>
-            </ul>
+        <div class="card border-primary">
+            <div class="card-header bg-primary text-white">
+                Ergebnis für: <strong>{{ result.oil }}</strong>
+            </div>
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-6">
+                        <h5>NaOH Bedarf</h5>
+                        <h2 class="text-warning">{{ result.naoh }}g</h2>
+                    </div>
+                    <div class="col-6">
+                        <h5>Wasser (ca.)</h5>
+                        <h2 class="text-info">{{ result.water }}g</h2>
+                    </div>
+                </div>
+                
+                <hr>
+                
+                {% if result.science %}
+                <h5>Seifen-Eigenschaften (Theoretisch)</h5>
+                <div class="row small text-muted">
+                    <div class="col-6">
+                        <ul class="list-unstyled">
+                            <li>Härte: <b class="text-white">{{ result.science.hardness }}</b> (29-54)</li>
+                            <li>Reinigung: <b class="text-white">{{ result.science.cleansing }}</b> (12-22)</li>
+                            <li>Pflege: <b class="text-white">{{ result.science.conditioning }}</b> (44-69)</li>
+                        </ul>
+                    </div>
+                    <div class="col-6">
+                        <ul class="list-unstyled">
+                            <li>Schaum: <b class="text-white">{{ result.science.bubbly }}</b> (14-46)</li>
+                            <li>Creme: <b class="text-white">{{ result.science.creamy }}</b> (16-48)</li>
+                            <li>Jodzahl: <b class="text-white">{{ result.science.iodine }}</b> (&lt;65-70)</li>
+                        </ul>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
         </div>
         {% endif %}
     </div>
