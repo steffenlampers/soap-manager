@@ -1,0 +1,55 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h2 class="mb-4">Lagerbestand</h2>
+
+<div class="row">
+    <div class="col-md-4 mb-4">
+        <div class="card border-warning">
+            <div class="card-body">
+                <h5 class="card-title text-warning">Wareneingang</h5>
+                <form method="POST">
+                    <div class="mb-3">
+                        <label>Rohstoff Name</label>
+                        <input type="text" name="name" class="form-control bg-dark text-white" required>
+                    </div>
+                    <div class="mb-3">
+                        <label>Menge (g)</label>
+                        <input type="number" step="1" name="amount" class="form-control bg-dark text-white" required>
+                    </div>
+                    <button type="submit" class="btn btn-warning w-100">Einlagern</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-8">
+        <div class="table-responsive">
+            <table class="table table-dark table-striped table-hover">
+                <thead>
+                    <tr>
+                        <th>Rohstoff</th>
+                        <th>Bestand</th>
+                        <th>Aktion</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for item in items %}
+                    <tr>
+                        <td>{{ item.name }}</td>
+                        <td>{{ item.amount }} g</td>
+                        <td>
+                            <a href="{{ url_for('delete_ingredient', id=item.id) }}" class="text-danger"><i class="bi bi-trash"></i></a>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="3" class="text-center text-muted">Lager ist leer.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

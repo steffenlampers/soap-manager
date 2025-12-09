@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h2 class="mb-4">Mein Rezeptbuch</h2>
+
+<div class="card mb-4 border-secondary">
+    <div class="card-header bg-secondary text-white">Neue Charge eintragen</div>
+    <div class="card-body">
+        <form method="POST" class="row g-3">
+            <div class="col-md-5">
+                <input type="text" name="name" class="form-control bg-dark text-white" placeholder="Name der Seife (z.B. Lavendel-Traum)" required>
+            </div>
+            <div class="col-md-3">
+                <input type="text" name="batch" class="form-control bg-dark text-white" placeholder="Chargen-Nr." required>
+            </div>
+            <div class="col-md-12">
+                <textarea name="notes" class="form-control bg-dark text-white" placeholder="Rezeptnotizen & Zutaten..." rows="2"></textarea>
+            </div>
+            <div class="col-12">
+                <button type="submit" class="btn btn-primary">Speichern</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="row">
+    {% for soap in soaps %}
+    <div class="col-md-6 mb-3">
+        <div class="card h-100">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="card-title text-success">{{ soap.name }}</h5>
+                    <small class="text-muted">{{ soap.date_created.strftime('%d.%m.%Y') }}</small>
+                </div>
+                <h6 class="card-subtitle mb-2 text-muted">Charge: {{ soap.batch_number }}</h6>
+                <p class="card-text">{{ soap.notes }}</p>
+                <a href="{{ url_for('delete_soap', id=soap.id) }}" class="btn btn-sm btn-outline-danger" onclick="return confirm('Wirklich löschen?')">Löschen</a>
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <p class="text-muted">Noch keine Rezepte gespeichert.</p>
+    {% endfor %}
+</div>
+{% endblock %}

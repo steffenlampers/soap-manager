@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="row text-center mb-5">
+    <div class="col-12">
+        <h1 class="display-4">Willkommen zurück!</h1>
+        <p class="lead text-secondary">Was möchtest du heute sieden?</p>
+    </div>
+</div>
+
+<div class="row g-4">
+    <div class="col-md-4">
+        <div class="card h-100 border-success">
+            <div class="card-body text-center">
+                <h2 class="text-success"><i class="bi bi-calculator"></i></h2>
+                <h5 class="card-title">Seifenrechner</h5>
+                <p class="card-text">NaOH und Wassermenge für dein neues Rezept berechnen.</p>
+                <a href="#" class="btn btn-outline-success">Starten</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card h-100 border-primary">
+            <div class="card-body text-center">
+                <h2 class="text-primary"><i class="bi bi-book"></i></h2>
+                <h5 class="card-title">Rezeptbuch</h5>
+                <p class="card-text">Durchstöbere deine {{ soap_count }} gespeicherten Rezepte.</p>
+                <a href="#" class="btn btn-outline-primary">Öffnen</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card h-100 border-warning">
+            <div class="card-body text-center">
+                <h2 class="text-warning"><i class="bi bi-tags"></i></h2>
+                <h5 class="card-title">Etiketten</h5>
+                <p class="card-text">Drucke Labels für deine fertigen Chargen.</p>
+                <a href="#" class="btn btn-outline-warning">Drucken</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
