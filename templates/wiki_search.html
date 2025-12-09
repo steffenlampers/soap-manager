@@ -1,0 +1,21 @@
+{% extends 'wiki_base.html' %}
+
+{% block wiki_content %}
+<h2 class="mb-4">Suchergebnisse für "<span class="text-info">{{ query }}</span>"</h2>
+
+{% if results %}
+<div class="list-group">
+    {% for res in results %}
+    <a href="{{ url_for('wiki_detail', id=res.id) }}" class="list-group-item list-group-item-action bg-dark text-white border-secondary mb-2">
+        <h5 class="mb-1 text-primary">{{ res.name }}</h5>
+        <p class="mb-1 text-muted">{{ res.content | striptags | truncate(200) }}</p>
+        <small class="text-secondary">Kategorie: {{ res.category }}</small>
+    </a>
+    {% endfor %}
+</div>
+{% else %}
+<div class="alert alert-warning">
+    Keine Ergebnisse gefunden. Versuche einen anderen Begriff.
+</div>
+{% endif %}
+{% endblock %}

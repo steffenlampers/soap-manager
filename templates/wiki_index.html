@@ -1,26 +1,36 @@
-{% extends 'base.html' %}
+{% extends 'wiki_base.html' %}
 
-{% block content %}
-<div class="d-flex justify-content-between align-items-center mb-4">
-    <h2><i class="bi bi-journal-bookmark-fill"></i> Wissensdatenbank</h2>
-    </div>
+{% block wiki_content %}
+<div class="p-5 mb-4 bg-dark border border-secondary rounded-3 text-center">
+    <h1 class="display-4 fw-bold text-success">Willkommen im SoapWiki</h1>
+    <p class="col-md-8 fs-4 mx-auto text-muted">Die freie Wissensdatenbank für deine Seifenproduktion.</p>
+    <p class="text-white">Aktuell <strong>{{ count }}</strong> Artikel und Rohstoffe gespeichert.</p>
+</div>
 
-<div class="row row-cols-1 row-cols-md-3 g-4">
-    {% for cat in categories %}
-    <div class="col">
-        <a href="{{ url_for('wiki_category', cat=cat) }}" class="text-decoration-none">
-            <div class="card h-100 bg-dark border-secondary hover-effect">
-                <div class="card-body text-center p-5">
-                    <h1 class="text-warning display-4"><i class="bi bi-folder-fill"></i></h1>
-                    <h3 class="text-white mt-3">{{ cat }}</h3>
+<div class="row">
+    <div class="col-md-8">
+        <h3 class="border-bottom border-secondary pb-2 mb-3">Schon gewusst? (Zufällig)</h3>
+        <div class="list-group">
+            {% for entry in random_entries %}
+            <a href="{{ url_for('wiki_detail', id=entry.id) }}" class="list-group-item list-group-item-action bg-transparent text-white border-secondary">
+                <div class="d-flex w-100 justify-content-between">
+                    <h5 class="mb-1 text-info">{{ entry.name }}</h5>
+                    <small class="text-muted">{{ entry.category }}</small>
                 </div>
+                <p class="mb-1 text-truncate text-secondary">{{ entry.content | striptags }}</p>
+            </a>
+            {% endfor %}
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card bg-black border-warning mb-3">
+            <div class="card-header bg-warning text-dark fw-bold">Wissenswertes</div>
+            <div class="card-body">
+                <p>Nutze die Suche links, um SAP-Werte oder Dosierungen zu finden.</p>
+                <p class="small text-muted">Neue Daten können im Admin-Bereich importiert werden.</p>
             </div>
-        </a>
+        </div>
     </div>
-    {% else %}
-    <div class="col-12 text-center text-muted">
-        <p>Noch keine Kategorien vorhanden. Bitte im Admin-Bereich importieren.</p>
-    </div>
-    {% endfor %}
 </div>
 {% endblock %}

@@ -1,0 +1,50 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-3 col-lg-2 d-md-block bg-dark border-end border-secondary p-3 sidebar collapse" id="wikiSidebar" style="min-height: 80vh;">
+            
+            <form action="{{ url_for('wiki_search') }}" method="GET" class="mb-4">
+                <div class="input-group">
+                    <input type="text" name="q" class="form-control bg-black text-white border-secondary" placeholder="Suchen..." value="{{ query if query else '' }}">
+                    <button class="btn btn-outline-secondary" type="submit"><i class="bi bi-search"></i></button>
+                </div>
+            </form>
+
+            <h6 class="d-flex justify-content-between align-items-center px-3 mt-4 mb-2 text-muted text-uppercase small">
+                <span>Navigation</span>
+            </h6>
+            <ul class="nav flex-column mb-4">
+                <li class="nav-item">
+                    <a class="nav-link text-white" href="{{ url_for('wiki') }}">
+                        <i class="bi bi-house-door me-2"></i> Hauptseite
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link text-info" href="{{ url_for('wiki_random') }}">
+                        <i class="bi bi-shuffle me-2"></i> Zufälliger Artikel
+                    </a>
+                </li>
+            </ul>
+
+            <h6 class="d-flex justify-content-between align-items-center px-3 mt-4 mb-2 text-muted text-uppercase small">
+                <span>Kategorien</span>
+            </h6>
+            <ul class="nav flex-column small">
+                {% for cat in categories %}
+                <li class="nav-item">
+                    <a class="nav-link text-secondary py-1" href="{{ url_for('wiki_category', cat=cat) }}">
+                        {{ cat }}
+                    </a>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+
+        <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 py-4">
+            {% block wiki_content %}{% endblock %}
+        </main>
+    </div>
+</div>
+{% endblock %}

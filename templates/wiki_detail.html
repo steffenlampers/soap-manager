@@ -1,71 +1,84 @@
-{% extends 'base.html' %}
-{% block content %}
-<a href="javascript:history.back()" class="btn btn-outline-secondary mb-3">&larr; Zurück</a>
+{% extends 'wiki_base.html' %}
 
-<div class="row">
-    <div class="{{ 'col-lg-8' if data else 'col-12' }}">
-        <h1 class="display-4 text-info">{{ entry.name }}</h1>
-        {% if entry.inci %}<p class="lead text-muted">INCI: {{ entry.inci }}</p>{% endif %}
-        <span class="badge bg-secondary mb-3">{{ entry.category }}</span>
-        <hr>
-        <div class="content lead">
-            {{ entry.content | safe }}
-        </div>
-    </div>
+{% block wiki_content %}
 
+<div class="article-container clearfix">
+    
     {% if data %}
-    <div class="col-lg-4 mt-4 mt-lg-0">
+    <div class="card border-secondary bg-black float-lg-end ms-lg-4 mb-4 shadow" style="width: 100%; max-width: 350px;">
+        <div class="card-header bg-secondary text-white fw-bold text-center">
+            {{ entry.name }}
+        </div>
         
-        {% if data.sap_naoh %}
-        <div class="card border-info mb-3">
-            <div class="card-header bg-info text-dark fw-bold">Verseifungswerte</div>
-            <ul class="list-group list-group-flush">
-                <li class="list-group-item d-flex justify-content-between"><span>NaOH:</span><b>{{ data.sap_naoh }}</b></li>
-                {% if data.sap_koh %}<li class="list-group-item d-flex justify-content-between"><span>KOH:</span><b>{{ data.sap_koh }}</b></li>{% endif %}
-                {% if data.iodine %}<li class="list-group-item d-flex justify-content-between"><span>Jodzahl:</span><b>{{ data.iodine }}</b></li>{% endif %}
-            </ul>
+        <div class="text-center py-4 bg-dark border-bottom border-secondary">
+            <i class="bi bi-droplet-half text-muted" style="font-size: 3rem;"></i>
         </div>
-        {% endif %}
 
-        {% if data.neutralization_factor %}
-        <div class="card border-warning mb-3">
-            <div class="card-header bg-warning text-dark fw-bold">Neutralisation</div>
-            <div class="card-body">
-                <p>Um 1g hiervon zu neutralisieren, benötigst du:</p>
-                <h3>{{ data.neutralization_factor }}g NaOH</h3>
-            </div>
-        </div>
-        {% endif %}
+        <ul class="list-group list-group-flush small">
+            {% if entry.inci %}
+            <li class="list-group-item bg-transparent text-white d-flex justify-content-between border-secondary">
+                <span>INCI</span><span class="text-end text-muted">{{ entry.inci }}</span>
+            </li>
+            {% endif %}
+            
+            {% if data.sap_naoh %}
+            <li class="list-group-item bg-dark text-info fw-bold border-secondary mt-2">Chemische Kennzahlen</li>
+            <li class="list-group-item bg-transparent text-white d-flex justify-content-between border-secondary">
+                <span>SAP (NaOH)</span><span class="text-info fw-bold">{{ data.sap_naoh }}</span>
+            </li>
+            <li class="list-group-item bg-transparent text-white d-flex justify-content-between border-secondary">
+                <span>Jodzahl</span><span>{{ data.iodine }}</span>
+            </li>
+            <li class="list-group-item bg-transparent text-white d-flex justify-content-between border-secondary">
+                <span>INS</span><span>{{ data.ins }}</span>
+            </li>
+            {% endif %}
 
-        {% if data.usage_rate %}
-        <div class="card border-success mb-3">
-            <div class="card-header bg-success text-white fw-bold">Einsatzkonzentration</div>
-            <div class="card-body">
+            {% if data.neutralization_factor %}
+            <li class="list-group-item bg-transparent text-white d-flex justify-content-between border-secondary">
+                <span>Neutralisationsfaktor</span><span class="text-warning fw-bold">{{ data.neutralization_factor }}</span>
+            </li>
+            {% endif %}
+
+            {% if data.usage_rate %}
+            <li class="list-group-item bg-dark text-success fw-bold border-secondary mt-2">Dosierung</li>
+            <li class="list-group-item bg-transparent text-white border-secondary">
                 {{ data.usage_rate }}
-            </div>
-        </div>
-        {% endif %}
+            </li>
+            {% endif %}
 
-        {% if data.fatty_acids %}
-        <div class="card border-secondary">
-            <div class="card-header">Fettsäureprofil</div>
-            <div class="card-body small">
+            {% if data.fatty_acids %}
+            <li class="list-group-item bg-dark text-info fw-bold border-secondary mt-2">Fettsäuren</li>
+            <li class="list-group-item bg-transparent text-white border-secondary p-3">
                 {% for acid, val in data.fatty_acids.items() %}
                     {% if val > 0 %}
                     <div class="d-flex justify-content-between mb-1">
                         <span class="text-capitalize">{{ acid }}</span>
                         <span>{{ val }}%</span>
                     </div>
-                    <div class="progress" style="height: 5px;">
+                    <div class="progress mb-2 bg-dark" style="height: 4px;">
                         <div class="progress-bar bg-secondary" style="width: {{ val }}%"></div>
                     </div>
                     {% endif %}
                 {% endfor %}
-            </div>
-        </div>
-        {% endif %}
-
+            </li>
+            {% endif %}
+        </ul>
     </div>
     {% endif %}
+
+    <h1 class="display-4 border-bottom border-secondary pb-2 mb-4">
+        {{ entry.name }}
+        <span class="badge bg-dark border border-secondary fs-6 align-middle ms-2 text-muted">{{ entry.category }}</span>
+    </h1>
+
+    <div class="lead entry-content" style="text-align: justify; line-height: 1.7;">
+        {{ entry.content | safe }}
+    </div>
+
+    <div class="mt-5 pt-3 border-top border-secondary text-muted small" style="clear: both;">
+        <p><i class="bi bi-folder"></i> Kategorie: <a href="{{ url_for('wiki_category', cat=entry.category) }}" class="text-info">{{ entry.category }}</a></p>
+    </div>
+
 </div>
 {% endblock %}

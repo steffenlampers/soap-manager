@@ -1,21 +1,28 @@
-{% extends 'base.html' %}
-{% block content %}
-<div class="d-flex align-items-center mb-4">
-    <a href="/wiki" class="btn btn-outline-secondary me-3"><i class="bi bi-arrow-left"></i> Übersicht</a>
-    <h2 class="mb-0 text-warning">{{ category }}</h2>
-</div>
+{% extends 'wiki_base.html' %}
 
-<div class="list-group">
+{% block wiki_content %}
+<h2 class="mb-4 border-bottom border-secondary pb-2">Kategorie: <span class="text-warning">{{ category }}</span></h2>
+
+<div class="row row-cols-1 row-cols-md-2 g-4">
     {% for entry in entries %}
-    <a href="{{ url_for('wiki_detail', id=entry.id) }}" class="list-group-item list-group-item-action bg-dark text-white border-secondary d-flex justify-content-between align-items-center p-3 mb-2">
-        <div>
-            <h5 class="mb-1 text-info">{{ entry.name }}</h5>
-            {% if entry.inci %}<small class="text-muted">{{ entry.inci }}</small>{% endif %}
+    <div class="col">
+        <div class="card h-100 bg-dark border-secondary">
+            <div class="card-body">
+                <h5 class="card-title text-info">
+                    <a href="{{ url_for('wiki_detail', id=entry.id) }}" class="text-decoration-none text-info">
+                        {{ entry.name }}
+                    </a>
+                </h5>
+                {% if entry.inci %}<h6 class="card-subtitle mb-2 text-muted">{{ entry.inci }}</h6>{% endif %}
+                <p class="card-text small text-secondary">
+                    {{ entry.content | striptags | truncate(120) }}
+                </p>
+            </div>
+            <div class="card-footer bg-transparent border-top-0">
+                <a href="{{ url_for('wiki_detail', id=entry.id) }}" class="btn btn-sm btn-outline-secondary">Mehr lesen</a>
+            </div>
         </div>
-        <i class="bi bi-chevron-right text-secondary"></i>
-    </a>
-    {% else %}
-    <p class="text-muted">Keine Einträge gefunden.</p>
+    </div>
     {% endfor %}
 </div>
 {% endblock %}
