@@ -1,0 +1,64 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<h2 class="mb-4 text-danger"><i class="bi bi-shield-lock-fill"></i> Admin Interface</h2>
+
+<div class="row g-4">
+    <div class="col-md-4">
+        <div class="card h-100 border-secondary">
+            <div class="card-header">System Status</div>
+            <div class="card-body">
+                <ul class="list-group list-group-flush bg-transparent">
+                    <li class="list-group-item bg-transparent text-white d-flex justify-content-between">
+                        <span>Wissensdatenbank Einträge:</span>
+                        <strong>{{ oil_count }}</strong>
+                    </li>
+                    <li class="list-group-item bg-transparent text-white d-flex justify-content-between">
+                        <span>Gespeicherte Rezepte:</span>
+                        <strong>{{ soap_count }}</strong>
+                    </li>
+                </ul>
+                <hr>
+                <div class="d-grid gap-2">
+                    <a href="{{ url_for('admin_oil_new') }}" class="btn btn-outline-success">Neues Öl manuell anlegen</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card h-100 border-warning">
+            <div class="card-header bg-warning text-dark fw-bold">Datenbank Import/Export</div>
+            <div class="card-body">
+                <p class="small text-muted">Importiert eine <code>.json</code> Datei. Vorhandene Öle (gleicher Name) werden aktualisiert, neue werden angelegt.</p>
+                
+                <form action="{{ url_for('admin_import') }}" method="POST" enctype="multipart/form-data" class="mb-3">
+                    <div class="input-group mb-3">
+                        <input type="file" name="file" class="form-control bg-dark text-white border-secondary" required>
+                        <button class="btn btn-warning" type="submit">Import</button>
+                    </div>
+                </form>
+
+                <hr>
+                <a href="{{ url_for('admin_export') }}" class="btn btn-outline-light w-100" target="_blank">
+                    <i class="bi bi-download"></i> Backup als JSON exportieren
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card h-100 border-danger">
+            <div class="card-header bg-danger text-white fw-bold">Gefahrenzone</div>
+            <div class="card-body text-center">
+                <p class="card-text text-danger">Löscht alle Öle aus der Wissensdatenbank (Rezepte bleiben erhalten).</p>
+                <a href="{{ url_for('admin_reset_db') }}" 
+                   class="btn btn-danger w-100" 
+                   onclick="return confirm('Bist du SICHER? Alle Öle werden gelöscht!')">
+                   <i class="bi bi-exclamation-triangle-fill"></i> Wissensdatenbank Reset
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

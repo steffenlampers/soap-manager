@@ -1,0 +1,35 @@
+{% extends 'base.html' %}
+{% block content %}
+<a href="/wiki" class="btn btn-outline-secondary mb-3">&larr; Zurück</a>
+<div class="card border-info">
+    <div class="card-header bg-info text-dark d-flex justify-content-between align-items-center">
+        <h2 class="mb-0">{{ oil.name }}</h2>
+        <a href="{{ url_for('admin_oil_edit', id=oil.id) }}" class="btn btn-dark btn-sm">Bearbeiten</a>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <h5 class="text-white">Beschreibung</h5>
+                <p class="lead">{{ oil.description }}</p>
+                <small class="text-muted">INCI: {{ oil.inci }}</small>
+                <hr>
+                <h6 class="text-muted">Chemische Daten</h6>
+                <ul class="list-group list-group-flush bg-transparent">
+                    <li class="list-group-item bg-transparent text-white">SAP (NaOH): <strong>{{ oil.sap_naoh }}</strong></li>
+                    <li class="list-group-item bg-transparent text-white">Jodzahl: <strong>{{ oil.iodine }}</strong></li>
+                    <li class="list-group-item bg-transparent text-white">INS: <strong>{{ oil.ins }}</strong></li>
+                </ul>
+            </div>
+            <div class="col-md-6 border-start border-secondary">
+                <h5 class="text-white mb-3">Eigenschaften</h5>
+                {% for prop, val in [('Härte', oil.hardness), ('Reinigung', oil.cleansing), ('Pflege', oil.conditioning), ('Schaum', oil.bubbly), ('Cremigkeit', oil.creamy)] %}
+                <label>{{ prop }} ({{ val }}/100)</label>
+                <div class="progress mb-3" style="height: 20px;">
+                    <div class="progress-bar" style="width: {{ val }}%"></div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
